@@ -1,4 +1,4 @@
-This repository contains the elements from an ongoing research project, which is assessing how commercial satellite
+This repository contains the elements from an ongoing research project, which is assessing how commercial satellite imagery
 
 ## Introduction
 
