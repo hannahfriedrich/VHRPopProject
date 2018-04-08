@@ -2,6 +2,12 @@
 
 > This repository contains elements from an ongoing research project, which is assessing how repeat coverage of commercial satellite imagery collections and gridded population data correlate. This initial research will aid in finding patterns between commerical satellite imagery and more complex spatial phenomenea.
 
+To replicate the Google Earth Engine part of this research, you can follow the following steps OR go to this [link][]:
+1. Create a [Google Earth Engine][] account
+2. Load [assets][]
+3. Load [script][]
+4. Export CSVs and run statistical analysis
+
 ## Introduction
 Population distribution modeling using satellite derived imagery has become a ubiquitous method for identifying human settlement, by utilizing land cover, vegetation indices, specific bands, nighttime lights, and image texture to map populations in areas of the world where there is infrequent and spatially coarse census data ([Lung et al., 2013][], [Pesaresi et al., 2016][]). Using satellite and machine learning, the spatial resolution of population estimates is becoming more refined, less expensive, scalable and increasingly in high demand as the applications for high spatial resolution population distribution are broad and numerous international projects are underway to track indicators for the United Nations Sustainable Development Goals (Jean et. al, 2016). For this project, instead of using spectral information from satellite imagery to estimate population density, density of commercial satellite imagery is investigated to statistically determine the parallels between very high resolution (VHR) commercial satellite coverage and satellite derived gridded population data.
 
@@ -19,7 +25,7 @@ With both the VHR layers by country and year and the WorldPop data ingested to G
 From the simple linear regressions conducted for each country, by year, I conclude that Pakistan from 2015 has the strongest linear relationship between VHR coverage and population density. This is corroborated by the fact that linear regression analysis for Pakistan 2015 has the largest linear regression coefficient of approximately 0.5, a residual value of 7.2 (see Figure 1) and a multiple R-squared value of approximately 0.15 (See Figure 2), which suggests that 15% of modeled population density can be explained by VHR coverage. For the other countries and years, the correlation coefficients fall within a similar range from 0.03 to 0.08, with residuals ranging from 0.6 to 4.3. Interestingly, Pakistan which has the highest correlation, also has the largest residual as well. This suggests that while VHR coverage and population density for Pakistan has a strong linear relationship, there is also large variability in population density; there are pixels that deviate relatively far from the fitted line of regression. These pixels which have high residual values are the pixels of greatest interest in looking for anomalies. Overall, while the correlation coefficients and multiple R-squared values are rather small when looking at all countries with years combined, there is, nevertheless, evidence for positive linear relationships between VHR coverage and WorldPop population estimates.
 
 ### Niger VHR and Population Correlation
-![](https://github.com/hannahfriedrich/VHRPopProject/blob/master/img/niger.jpg)
+![](https://github.com/hannahfriedrich/VHRPopProject/blob/master/img/niger.png)
 
 ### Mali VHR and Population Correlation
 ![](https://github.com/hannahfriedrich/VHRPopProject/blob/master/img/mali.jpg)
@@ -67,4 +73,6 @@ This analysis is intended to be an experiential project which explores the relat
 [Pesaresi et al., 2016]: https://www.researchgate.net/profile/Martino_Pesaresi/publication/299597485_Operating_procedure_for_the_production_of_the_Global_Human_Settlement_Layer_from_Landsat_data_of_the_epochs_1975_1990_2000_and_2014/links/573192c208aed286ca0e1831/Operating-procedure-for-the-production-of-the-Global-Human-Settlement-Layer-from-Landsat-data-of-the-epochs-1975-1990-2000-and-2014.pdf
 [Google Earth Engine]: https://earthengine.google.com/
 [Stevens et al., 2015]: http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0107042
-
+[assets]:
+[script]:
+[link]: https://code.earthengine.google.com/58214a4955a46ffc5d51d3be8ff0d0d9
