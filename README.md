@@ -2,7 +2,7 @@
 
 > This repository contains elements from an ongoing research project, which is assessing how repeat coverage of commercial satellite imagery collections and gridded population data correlate. This initial research will aid in finding patterns between commerical satellite imagery and more complex spatial phenomenea.
 
-To replicate the Google Earth Engine part of this research, you can follow the following steps **__OR__** go to this [link][]:
+To replicate the Google Earth Engine part of this research, you can follow the following steps **_OR_** go to this [link][]:
 1. Create a [Google Earth Engine][] account
 2. Load [assets][]
 3. Load [script][]
@@ -73,6 +73,6 @@ This analysis is intended to be an experiential project which explores the relat
 [Pesaresi et al., 2016]: https://www.researchgate.net/profile/Martino_Pesaresi/publication/299597485_Operating_procedure_for_the_production_of_the_Global_Human_Settlement_Layer_from_Landsat_data_of_the_epochs_1975_1990_2000_and_2014/links/573192c208aed286ca0e1831/Operating-procedure-for-the-production-of-the-Global-Human-Settlement-Layer-from-Landsat-data-of-the-epochs-1975-1990-2000-and-2014.pdf
 [Google Earth Engine]: https://earthengine.google.com/
 [Stevens et al., 2015]: http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0107042
-[assets]:
-[script]:
+[assets]: https://github.com/hannahfriedrich/VHRPopProject/tree/master/assets
+[script]: https://github.com/hannahfriedrich/VHRPopProject/blob/master/code/GEE_VHRPop.txt
 [link]: https://code.earthengine.google.com/58214a4955a46ffc5d51d3be8ff0d0d9
