@@ -2,7 +2,7 @@
 
 > This repository contains elements from an ongoing research project, which is assessing how repeat coverage of commercial satellite imagery collections and gridded population data correlate. This initial research will aid in finding patterns between commerical satellite imagery and more complex spatial phenomenea.
 
-To replicate the Google Earth Engine part of this research, you can follow the following steps OR go to this [link][]:
+To replicate the Google Earth Engine part of this research, you can follow the following steps **__OR__** go to this [link][]:
 1. Create a [Google Earth Engine][] account
 2. Load [assets][]
 3. Load [script][]

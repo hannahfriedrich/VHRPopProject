@@ -1,0 +1,1026 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1404\cocoasubrtf470
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+\margl1440\margr1440\vieww10800\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 Map.addLayer(access, \{\}, 'access');\
+\
+//---------------Niger 2010--------------------------------------//\
+\
+//Filter worldPop to get Niger 2010 Unadjusted - can't do first operation here, not sure why it's not working\
+var niger = LSIB.filterMetadata('cc', 'equals', 'NG')\
+//print(niger);\
+var niger_geom = niger.geometry()\
+//print(niger_geom, 'niger_geom')\
+//Map.addLayer(niger_geom, \{\}, 'niger_geom');\
+\
+//Create 2010 collection, mosaic into one image, add to map\
+var collection2010 = ee.ImageCollection([afghanistan_2010, mali_2010, niger_2010, pakistan_2010, somalia_2010, yemen_2010]);\
+//print(collection2010);\
+\
+var mosaic2010 = collection2010.mosaic()\
+//print(mosaic2010);\
+//Map.addLayer(mosaic2010, \{\}, 'mosaic2010');\
+\
+//Create 2015 collection, mosaic into one image, add to map\
+var collection2015 = ee.ImageCollection([afghanistan_2015, mali_2015, niger_2015, pakistan_2015, somalia_2015, yemen_2015]);\
+//print(collection2015);\
+\
+var mosaic2015 = collection2015.mosaic()\
+//print(mosaic2015);\
+//Map.addLayer(mosaic2015, \{\}, 'mosaic2015');\
+\
+//Create multi-band image\
+var multiband = ee.Image.cat([mosaic2010, mosaic2015]);\
+var VHR = multiband.select(\
+    ['b1', 'b1_1'], // old names\
+    ['2010', '2015'] // new names\
+    );\
+// print(VHR);\
+// Map.addLayer(VHR, \{\}, "VHR");\
+\
+//print(niger_2010, 'niger_2010');\
+//Map.addLayer(niger_2010, \{\}, 'niger_2010');\
+\
+// Get scale (in meters)\
+var niger_2010_VHR_scale = niger_2010.projection().nominalScale();\
+//print('Niger 2010 VHR scale: ', niger_2010_VHR_scale); // ee.Number\
+\
+\
+// // filterMetadata\
+// // each country year needs it's own filter\
+// // '10 and '15 correlation \
+// // low correlation\
+// // agregate, register \
+// // reduceResolution map to worldPop, chose how you reduce the resolution\
+// // maxPixels \
+\
+// //Niger = NER\
+// // gdal \
+// // modis.reproject \
+// // gdal warp. tap (target aligned pixels)\
+// // reduceResolution - reduce then cross-correlation, may need to do registration\
+\
+//Filter worldPop to get Niger 2010 Unadjusted - can't do first operation here, not sure why it's not working\
+var popNiger2010 = worldPop.filterMetadata('country', 'equals', 'NER')\
+                            .filterMetadata('year', 'equals', 2010)\
+                            .filterMetadata('UNadj', 'equals', 'no')\
+                            //.first();\
+//print(popNiger2010);\
+//Map.addLayer(popNiger2010, \{\}, 'popNiger2010');\
+\
+\
+// //Make image, add to map\
+var popNiger2010_img = ee.Image(popNiger2010.first());\
+// //print (popNiger2010_img, 'popNiger2010_img');\
+// //Map.addLayer(popNiger2010_img, \{\}, 'popNiger2010_img');\
+\
+// // Get scale (in meters)\
+var niger_scale = popNiger2010_img.projection()//.nominalScale();\
+// //print('Niger 2010 World Pop scale: ', niger_scale); // ee.Number\
+\
+var vhrProjection = VHR.projection();\
+//print('vhrProjection:', vhrProjection);\
+\
+//reduceResolution\
+var popNiger2010_img_reducer = popNiger2010_img.reduceResolution(\{\
+      reducer: ee.Reducer.mean(),\
+      maxPixels: 200, //have also tried 12\
+      bestEffort: true\
+    \})\
+    .reproject(vhrProjection,null,niger_2010_VHR_scale)//.scale(0.1, 0.1);\
+    // .reduceResolution(\{\
+    //   reducer: ee.Reducer.mean(),\
+    //   maxPixels: 10, //have also tried 12\
+    //   bestEffort: true\
+    // \});\
+    \
+\
+    \
+//print(popNiger2010_img_reducer, 'popNiger2010_img_reducer');\
+//Map.addLayer(popNiger2010_img_reducer, \{\}, 'popNiger2010_reduceRes');\
+\
+\
+// Get scale (in meters)\
+var reduceRes_scale = popNiger2010_img_reducer.projection().nominalScale();\
+//print('reduceResolution scale: ', reduceRes_scale); // ee.Number\
+\
+// // Reduce the region. The region parameter is the Feature geometry.\
+// var maxDictionary = popNiger2010_img_reducer.reduceRegion(\{\
+//   reducer: ee.Reducer.minMax(),\
+//   geometry: niger_geom,\
+//   scale: reduceRes_scale,\
+//   maxPixels: 1e9\
+// \});\
+\
+// // The result is a Dictionary.  Print it.\
+// print(maxDictionary);\
+\
+// //var vhr_niger_2010 = niger_2010.select(\
+// //     ['b1'], // old names\
+// //     ['VHR'] // new names\
+// //     );\
+\
+// // print(vhr_niger_2010, 'vhr_niger_2010');\
+\
+// // var worldPop_niger_2010 = popNiger2010_img_reducer.select(\
+// //     ['population'], // old names\
+// //     ['WorldPop'] // new names\
+// //     );\
+// // print(worldPop_niger_2010, 'worldPop_niger_2010');\
+\
+// // Create collection to run linear regression on\
+// var niger_2010_collection = ee.ImageCollection.fromImages([vhr_niger_2010, worldPop_niger_2010]);\
+// print(niger_2010_collection, 'niger_2010_collection');\
+\
+// //Create multi-band image of Niger 2010 and WorldPop\
+var niger_2010_multi = niger_2010.addBands(popNiger2010_img_reducer);\
+//print (niger_2010_multi, 'niger_2010_multi');\
+\
+var niger_2010_multi_rename = niger_2010_multi.select(\
+    ['b1', 'population'], // old names\
+    ['VHR', 'WorldPop'] // new names\
+    );\
+//print(niger_2010_multi_rename, 'niger_2010_multi_rename');\
+\
+\
+//Linear Regression\
+var niger_2010_multi_linearReg = niger_2010_multi_rename//.select(['VHR', 'WorldPop'])\
+  .reduceRegion(\{\
+    reducer:ee.Reducer.linearRegression(\{numX:1, numY:1\}),\
+    maxPixels: 1e10\
+  \})\
+//print(niger_2010_multi_linearReg, 'niger_2010_multi_linearReg');\
+\
+\
+//------------CrossCorrelation-------------------------------------// \
+// var popCor = ee.Algorithms.CrossCorrelation(niger_2010, popNiger2010_img_reducer, 2, 3);\
+// //print(popCor, 'popCor');\
+\
+// var corCoef = popCor.select(3);\
+// print(corCoef);\
+\
+// var coefViz = \{min: -1, max: 1, palette: ['FF0000', '0000FF']\};\
+// Map.addLayer(corCoef, coefViz, 'corCoef');\
+\
+//-------------------Covariance and Correlation--------------------------------//\
+\
+// //Covariance\
+// var covariance = function(mergedCollection, band, lagBand) \{\
+//   return mergedCollection.select([band, lagBand]).map(function(image) \{\
+//     return image.toArray();\
+//   \}).reduce(ee.Reducer.covariance(), 8);\
+// \};\
+\
+// var lagBand = dependent.cat('_1');\
+\
+// var covariance17 = ee.Image(covariance(merged17, dependent, lagBand));\
+\
+// Map.addLayer(covariance17.arrayGet([0, 1]), \{\}, 'covariance (lag = 17 days)');\
+\
+// //Correlation\
+// var correlation = function(vcArrayImage) \{\
+//   var covariance = ee.Image(vcArrayImage).arrayGet([0, 1]);\
+//   var sd0 = ee.Image(vcArrayImage).arrayGet([0, 0]).sqrt();\
+//   var sd1 = ee.Image(vcArrayImage).arrayGet([1, 1]).sqrt();\
+//   return covariance.divide(sd0).divide(sd1).rename('correlation');\
+// \};\
+\
+// var correlation17 = correlation(covariance17);\
+\
+// Map.addLayer(correlation17, \{min: -1, max: 1\}, 'correlation (lag = 17 days)');\
+\
+\
+// map over vhr_values list\
+// create new feature with every value encountered\
+// within map function, you would return a feature with the value as a property\
+// return ee.Feature(null,value) // null geometry\
+\
+// create variable which masks out values from the niger 2010 image but includes values greater than 0\
+var niger_2010_vhr_input = niger_2010.mask(popNiger2010_img_reducer.gt(-1))\
+\
+//Map over VHR values, new feature created with every value encountered, feature with value as a property returned \
+var niger_2010_vhr_values = ee.Feature(null,niger_2010_vhr_input.reduceRegion(ee.Reducer.toList(),niger_geom,niger_2010_VHR_scale))//.get('b1');\
+var niger_2010_pop_values = ee.Feature(null,popNiger2010_img_reducer.reduceRegion(ee.Reducer.toList(),niger_geom,niger_2010_VHR_scale))//.get('population');\
+\
+//print(niger_2010_vhr_values)\
+//print(niger_2010_pop_values)\
+\
+// Create a feature collection which contains all the features that were created above for both the VHR and WorldPop\
+var niger_2010_vhr_fc = ee.FeatureCollection(niger_2010_vhr_values)//.merge(ee.FeatureCollection(pop_values))\
+//print(niger_2010_vhr_fc)\
+var niger_2010_pop_fc = ee.FeatureCollection(niger_2010_pop_values)\
+//print(niger_2010_pop_fc)\
+\
+// // Export the FeatureCollections to CSV\
+// Export.table.toDrive(\{\
+//   collection: niger_2010_vhr_fc,\
+//   description:'niger_2010_vhr_fc',\
+//   folder: '581_Project',\
+//   fileFormat: 'CSV'\
+// \});\
+\
+// Export.table.toDrive(\{\
+//   collection: niger_2010_pop_fc,\
+//   description:'niger_2010_pop_fc',\
+//   folder: '581_Project',\
+//   fileFormat: 'CSV'\
+// \});\
+\
+\
+//--------------------------Niger 2015----------------------------------------//\
+\
+// Get scale (in meters)\
+var NER_2015_VHR_scale = niger_2015.projection().nominalScale();\
+//print('Niger 2010 VHR scale: ', NER_2015_VHR_scale); // ee.Number\
+\
+//Filter worldPop to get Niger 2015 Unadjusted - can't do first operation here, not sure why it's not working\
+var NER_2015_worldPop = worldPop.filterMetadata('country', 'equals', 'NER')\
+                            .filterMetadata('year', 'equals', 2015)\
+                            .filterMetadata('UNadj', 'equals', 'no')\
+                            //.first();\
+//print(NER_2015_worldPop);\
+//Map.addLayer(popNiger2010, \{\}, 'popNiger2010');\
+\
+//Make image, add to map\
+var NER_2015_worldPop_img = ee.Image(NER_2015_worldPop.first());\
+// print (NER_2015_worldPop_img, 'NER_2015_worldPop_img');\
+// Map.addLayer(NER_2015_worldPop_img, \{\}, 'NER_2015_worldPop_img');\
+\
+// Get scale (in meters)\
+var NER_2015_worldPop_scale = NER_2015_worldPop_img.projection()//.nominalScale();\
+//print('Niger 2015 World Pop scale: ', NER_2015_worldPop_scale); // ee.Number\
+\
+//reduceResolution\
+var NER_2015_worldPop_img_reducer = NER_2015_worldPop_img.reduceResolution(\{\
+      reducer: ee.Reducer.mean(),\
+      maxPixels: 200, //have also tried 12\
+      bestEffort: true\
+    \})\
+    .reproject(vhrProjection,null,NER_2015_VHR_scale)\
+    \
+// Get scale (in meters)\
+var NER_2015_worldPop_img_reducer_scale = NER_2015_worldPop_img_reducer.projection().nominalScale();\
+//print('Niger 2015 reduceResolution scale: ', NER_2015_worldPop_img_reducer_scale); // ee.Number\
+\
+//Create multi-band image of Niger 2010 and WorldPop\
+var NER_2015_multi = niger_2015.addBands(NER_2015_worldPop_img_reducer);\
+//print (NER_2015_multi, 'NER_2015_multi');\
+\
+var NER_2015_multi_rename = NER_2015_multi.select(\
+    ['b1', 'population'], // old names\
+    ['VHR', 'WorldPop'] // new names\
+    );\
+//print(NER_2015_multi_rename, 'NER_2015_multi_rename');\
+//Map.addLayer(NER_2015_multi_rename, \{\}, 'multi');\
+\
+//Linear Regression\
+var NER_2015_multi_rename_linearReg = NER_2015_multi_rename//.select(['VHR', 'WorldPop'])\
+  .reduceRegion(\{\
+    reducer:ee.Reducer.linearRegression(\{numX:1, numY:1\}),\
+    maxPixels: 1e10\
+  \})\
+//print(NER_2015_multi_rename_linearReg, 'NER_2015_multi_rename_linearReg');\
+\
+// create variable which masks out values from the niger 2010 image but includes values greater than 0\
+var niger_2015_vhr_input = niger_2015.mask(NER_2015_worldPop_img_reducer.gt(-1))\
+\
+//Map over VHR values, new feature created with every value encountered, feature with value as a property returned \
+var niger_2015_vhr_values = ee.Feature(null,niger_2015_vhr_input.reduceRegion(ee.Reducer.toList(),niger_geom,NER_2015_VHR_scale))//.get('b1');\
+var niger_2015_pop_values = ee.Feature(null,NER_2015_worldPop_img_reducer.reduceRegion(ee.Reducer.toList(),niger_geom,NER_2015_VHR_scale))//.get('population');\
+\
+//print(niger_2015_vhr_values)\
+//print(niger_2015_pop_values)\
+\
+\
+// Create a feature collection which contains all the features that were created above for both the VHR and WorldPop\
+var niger_2015_vhr_fc = ee.FeatureCollection(niger_2015_vhr_values)//.merge(ee.FeatureCollection(pop_values))\
+//print(niger_2015_vhr_fc)\
+var niger_2015_pop_fc = ee.FeatureCollection(niger_2015_pop_values)\
+//print(niger_2015_pop_fc)\
+\
+// //Export the FeatureCollections to CSV\
+// // Export.table.toDrive(\{\
+// //   collection: niger_2015_vhr_fc,\
+// //   description:'niger_2015_vhr_fc',\
+// //   folder: '581_Project',\
+// //   fileFormat: 'CSV'\
+// // \});\
+\
+// // Export.table.toDrive(\{\
+// //   collection: niger_2015_pop_fc,\
+// //   description:'niger_2015_pop_fc',\
+// //   folder: '581_Project',\
+// //   fileFormat: 'CSV'\
+// // \});\
+\
+//-------------------Mali 2010---------------------------------------///\
+\
+//Filter LSIB to get mali geometry\
+var mali = LSIB.filterMetadata('cc', 'equals', 'ML')\
+//print(mali);\
+var mali_geom = mali.geometry()\
+//print(mali_geom, 'mali_geom')\
+//Map.addLayer(mali_geom, \{\}, 'mali_geom');\
+\
+// Get scale (in meters)\
+var MLI_2010_VHR_scale = mali_2010.projection().nominalScale();\
+//print('Mali 2010 VHR scale: ', MLI_2010_VHR_scale); // ee.Number\
+\
+//Filter worldPop to get Mali 2010 Adjusted - can't do first operation here, not sure why it's not working\
+var MLI_2010_worldPop = worldPop.filterMetadata('country', 'equals', 'MLI')\
+                            .filterMetadata('year', 'equals', 2010)\
+                            .filterMetadata('UNadj', 'equals', 'no')\
+                            //.first();\
+//print(MLI_2010_worldPop);\
+//Map.addLayer(MLI_2010_worldPop, \{\}, 'MLI_2010_worldPop');\
+\
+//Make image, add to map\
+var MLI_2010_worldPop_img = ee.Image(MLI_2010_worldPop.first());\
+//print (MLI_2010_worldPop_img, 'MLI_2010_worldPop_img');\
+//Map.addLayer(MLI_2010_worldPop_img, \{\}, 'MLI_2010_worldPop_img');\
+\
+// Get scale (in meters)\
+var MLI_2010_worldPop_scale = MLI_2010_worldPop_img.projection().nominalScale();\
+//print('Mali 2010 World Pop scale: ', MLI_2010_worldPop_scale); // ee.Number\
+\
+//reduceResolution\
+var MLI_2010_worldPop_img_reducer = MLI_2010_worldPop_img.reduceResolution(\{\
+      reducer: ee.Reducer.mean(),\
+      maxPixels: 200, //have also tried 12\
+      bestEffort: true\
+    \})\
+    .reproject(vhrProjection,null,MLI_2010_VHR_scale)\
+    \
+// Get scale (in meters)\
+var MLI_2010_worldPop_img_reducer_scale = MLI_2010_worldPop_img_reducer.projection().nominalScale();\
+//print('Mali 2010 reduceResolution scale: ', MLI_2010_worldPop_img_reducer_scale); // ee.Number\
+\
+//Create multi-band image of Niger 2010 and WorldPop\
+var MLI_2010_multi = mali_2010.addBands(MLI_2010_worldPop_img_reducer);\
+//print (MLI_2010_multi, 'MLI_2010_multi');\
+\
+var MLI_2010_multi_rename = MLI_2010_multi.select(\
+    ['b1', 'population'], // old names\
+    ['VHR', 'WorldPop'] // new names\
+    );\
+//print(MLI_2010_multi_rename, 'MLI_2010_multi_rename');\
+\
+//Linear Regression\
+var MLI_2010_multi_rename_linearReg = MLI_2010_multi_rename//.select(['VHR', 'WorldPop'])\
+  .reduceRegion(\{\
+    reducer:ee.Reducer.linearRegression(\{numX:1, numY:1\}),\
+    maxPixels: 1e10\
+  \})\
+//print(MLI_2010_multi_rename_linearReg, 'MLI_2010_multi_rename_linearReg');\
+\
+// create variable which masks out values from the niger 2010 image but includes values greater than 0\
+var MLI_2010_vhr_input = mali_2010.mask(MLI_2010_worldPop_img_reducer.gt(-1))\
+\
+//Map over VHR values, new feature created with every value encountered, feature with value as a property returned \
+var MLI_2010_vhr_values = ee.Feature(null,MLI_2010_vhr_input.reduceRegion(ee.Reducer.toList(),mali_geom,MLI_2010_VHR_scale))//.get('b1');\
+var MLI_2010_pop_values = ee.Feature(null,MLI_2010_worldPop_img_reducer.reduceRegion(ee.Reducer.toList(),mali_geom,MLI_2010_VHR_scale))//.get('population');\
+\
+//print(MLI_2010_vhr_values)\
+//print(MLI_2010_pop_values)\
+\
+// // Create a feature collection which contains all the features that were created above for both the VHR and WorldPop\
+// var MLI_2010_vhr_fc = ee.FeatureCollection(MLI_2010_vhr_values)//.merge(ee.FeatureCollection(pop_values))\
+// print(MLI_2010_vhr_fc)\
+// var MLI_2010_pop_fc = ee.FeatureCollection(MLI_2010_pop_values)\
+// print(MLI_2010_pop_fc)\
+\
+// //Export the FeatureCollections to CSV\
+// // Export.table.toDrive(\{\
+// //   collection: MLI_2010_vhr_fc,\
+// //   description:'MLI_2010_vhr_fc',\
+// //   folder: '581_Project',\
+// //   fileFormat: 'CSV'\
+// // \});\
+\
+// // Export.table.toDrive(\{\
+// //   collection: MLI_2010_pop_fc,\
+// //   description:'MLI_2010_pop_fc',\
+// //   folder: '581_Project',\
+// //   fileFormat: 'CSV'\
+// // \});\
+\
+//-----------------Mali 2015---------------------------------//\
+//Get scale (in meters)\
+var MLI_2015_VHR_scale = mali_2015.projection().nominalScale();\
+//print('Mali 2015 VHR scale: ', MLI_2015_VHR_scale); // ee.Number\
+\
+//Filter worldPop to get Niger 2015 Unadjusted - can't do first operation here, not sure why it's not working\
+var MLI_2015_worldPop = worldPop.filterMetadata('country', 'equals', 'MLI')\
+                            .filterMetadata('year', 'equals', 2015)\
+                            .filterMetadata('UNadj', 'equals', 'no')\
+                            //.first();\
+//print(MLI_2015_worldPop);\
+//Map.addLayer(MLI_2015_worldPop, \{\}, 'MLI_2015_worldPop');\
+\
+//Make image, add to map\
+var MLI_2015_worldPop_img = ee.Image(MLI_2015_worldPop.first());\
+//print (MLI_2015_worldPop_img, 'MLI_2015_worldPop_img');\
+//Map.addLayer(MLI_2015_worldPop_img, \{\}, 'MLI_2015_worldPop_img');\
+\
+// Get scale (in meters)\
+var MLI_2015_worldPop_img_scale = MLI_2015_worldPop_img.projection().nominalScale();\
+//print('Mali 2015 World Pop scale: ', MLI_2015_worldPop_img_scale); // ee.Number\
+\
+//reduceResolution\
+var MLI_2015_worldPop_img_reducer = MLI_2015_worldPop_img.reduceResolution(\{\
+      reducer: ee.Reducer.mean(),\
+      maxPixels: 200, //have also tried 12\
+      bestEffort: true\
+    \})\
+    .reproject(vhrProjection,null,MLI_2015_VHR_scale)\
+    \
+// Get scale (in meters)\
+var MLI_2015_worldPop_img_reducer_scale = MLI_2015_worldPop_img_reducer.projection().nominalScale();\
+//print('Mali 2015 reduceResolution scale: ', MLI_2015_worldPop_img_reducer_scale); // ee.Number\
+\
+//Create multi-band image of Niger 2010 and WorldPop\
+var MLI_2015_multi = mali_2015.addBands(MLI_2015_worldPop_img_reducer);\
+//print (MLI_2015_multi, 'MLI_2015_multi');\
+\
+var MLI_2015_multi_rename = MLI_2015_multi.select(\
+    ['b1', 'population'], // old names\
+    ['VHR', 'WorldPop'] // new names\
+    );\
+//print(MLI_2015_multi_rename, 'MLI_2015_multi_rename');\
+\
+//Linear Regression\
+var MLI_2015_multi_rename_linearReg = MLI_2015_multi_rename//.select(['VHR', 'WorldPop'])\
+  .reduceRegion(\{\
+    reducer:ee.Reducer.linearRegression(\{numX:1, numY:1\}),\
+    maxPixels: 1e10\
+  \})\
+//print(MLI_2015_multi_rename_linearReg, 'MLI_2015_multi_rename_linearReg');\
+\
+// create variable which masks out values from the niger 2010 image but includes values greater than 0\
+var MLI_2015_vhr_input = mali_2015.mask(MLI_2015_worldPop_img_reducer.gt(-1))\
+\
+//Map over VHR values, new feature created with every value encountered, feature with value as a property returned \
+var MLI_2015_vhr_values = ee.Feature(null,MLI_2015_vhr_input.reduceRegion(ee.Reducer.toList(),mali_geom,MLI_2015_VHR_scale))//.get('b1');\
+var MLI_2015_pop_values = ee.Feature(null,MLI_2015_worldPop_img_reducer.reduceRegion(ee.Reducer.toList(),mali_geom,MLI_2015_VHR_scale))//.get('population');\
+\
+//print(MLI_2015_vhr_values)\
+//print(MLI_2015_pop_values)\
+\
+// Create a feature collection which contains all the features that were created above for both the VHR and WorldPop\
+var MLI_2015_vhr_fc = ee.FeatureCollection(MLI_2015_vhr_values)//.merge(ee.FeatureCollection(pop_values))\
+//print(MLI_2015_vhr_fc)\
+var MLI_2015_pop_fc = ee.FeatureCollection(MLI_2015_pop_values)\
+//print(MLI_2015_pop_fc)\
+\
+// //Export the FeatureCollections to CSV\
+// Export.table.toDrive(\{\
+//   collection: MLI_2015_vhr_fc,\
+//   description:'MLI_2015_vhr_fc',\
+//   folder: '581_Project',\
+//   fileFormat: 'CSV'\
+// \});\
+\
+// Export.table.toDrive(\{\
+//   collection: MLI_2015_pop_fc,\
+//   description:'MLI_2015_pop_fc',\
+//   folder: '581_Project',\
+//   fileFormat: 'CSV'\
+// \});\
+\
+//-------------------Somalia 2010---------------------------------------///\
+\
+//Filter worldPop to get Niger 2010 Unadjusted - can't do first operation here, not sure why it's not working\
+var somalia = LSIB.filterMetadata('cc', 'equals', 'SO')\
+//print(somalia);\
+var somalia_geom = somalia.geometry()\
+//print(somalia_geom, 'somalia_geom')\
+//Map.addLayer(somalia_geom, \{\}, 'somalia_geom');\
+\
+// Get scale (in meters)\
+var SOM_2010_VHR_scale = somalia_2010.projection().nominalScale();\
+//print('Somalia 2010 VHR scale: ', SOM_2010_VHR_scale); // ee.Number\
+\
+//Filter worldPop to get Niger 2015 Unadjusted - can't do first operation here, not sure why it's not working\
+var SOM_2010_worldPop = worldPop.filterMetadata('country', 'equals', 'SOM')\
+                            .filterMetadata('year', 'equals', 2010)\
+                            .filterMetadata('UNadj', 'equals', 'yes')\
+                            //.first();\
+//print(SOM_2010_worldPop);\
+//Map.addLayer(SOM_2010_worldPop, \{\}, 'SOM_2010_worldPop');\
+\
+//Make image, add to map\
+var SOM_2010_worldPop_img = ee.Image(SOM_2010_worldPop.first());\
+// print (SOM_2010_worldPop_img, 'SOM_2010_worldPop_img');\
+// Map.addLayer(SOM_2010_worldPop_img, \{\}, 'SOM_2010_worldPop_img');\
+\
+// Get scale (in meters)\
+var SOM_2010_worldPop_scale = SOM_2010_worldPop_img.projection().nominalScale();\
+//print('Somalia 2010 World Pop scale: ', SOM_2010_worldPop_scale); // ee.Number\
+\
+//reduceResolution\
+var SOM_2010_worldPop_img_reducer = SOM_2010_worldPop_img.reduceResolution(\{\
+      reducer: ee.Reducer.mean(),\
+      maxPixels: 200, //have also tried 12\
+      bestEffort: true\
+    \})\
+    .reproject(vhrProjection,null,SOM_2010_VHR_scale)\
+    \
+// Get scale (in meters)\
+var SOM_2010_worldPop_img_reducer_scale = SOM_2010_worldPop_img_reducer.projection().nominalScale();\
+//print('Somalia 2010 reduceResolution scale: ', SOM_2010_worldPop_img_reducer_scale); // ee.Number\
+\
+//Create multi-band image of Niger 2010 and WorldPop\
+var SOM_2010_multi = somalia_2010.addBands(SOM_2010_worldPop_img_reducer);\
+//print (SOM_2010_multi, 'SOM_2010_multi');\
+\
+var SOM_2010_multi_rename = SOM_2010_multi.select(\
+    ['b1', 'population'], // old names\
+    ['VHR', 'WorldPop'] // new names\
+    );\
+//print(SOM_2010_multi_rename, 'SOM_2010_multi_rename');\
+\
+//Linear Regression\
+var SOM_2010_multi_rename_linearReg = SOM_2010_multi_rename//.select(['VHR', 'WorldPop'])\
+  .reduceRegion(\{\
+    reducer:ee.Reducer.linearRegression(\{numX:1, numY:1\}),\
+    maxPixels: 1e10\
+  \})\
+//print(SOM_2010_multi_rename_linearReg, 'SOM_2010_multi_rename_linearReg');\
+\
+// create variable which masks out values from the niger 2010 image but includes values greater than 0\
+var SOM_2010_vhr_input = somalia_2010.mask(SOM_2010_worldPop_img_reducer.gt(-1))\
+\
+//Map over VHR values, new feature created with every value encountered, feature with value as a property returned \
+var SOM_2010_vhr_values = ee.Feature(null,SOM_2010_vhr_input.reduceRegion(ee.Reducer.toList(),somalia_geom,SOM_2010_VHR_scale))//.get('b1');\
+var SOM_2010_pop_values = ee.Feature(null,SOM_2010_worldPop_img_reducer.reduceRegion(ee.Reducer.toList(),somalia_geom,SOM_2010_VHR_scale))//.get('population');\
+\
+//print(SOM_2010_vhr_values)\
+//print(SOM_2010_pop_values)\
+\
+// Create a feature collection which contains all the features that were created above for both the VHR and WorldPop\
+var SOM_2010_vhr_fc = ee.FeatureCollection(SOM_2010_vhr_values)//.merge(ee.FeatureCollection(pop_values))\
+//print(SOM_2010_vhr_fc)\
+var SOM_2010_pop_fc = ee.FeatureCollection(SOM_2010_pop_values)\
+//print(SOM_2010_pop_fc)\
+\
+// // //Export the FeatureCollections to CSV\
+// // Export.table.toDrive(\{\
+// //   collection: SOM_2010_vhr_fc,\
+// //   description:'SOM_2010_vhr_fc',\
+// //   folder: '581_Project',\
+// //   fileFormat: 'CSV'\
+// // \});\
+\
+// // Export.table.toDrive(\{\
+// //   collection: SOM_2010_pop_fc,\
+// //   description:'SOM_2010_pop_fc',\
+// //   folder: '581_Project',\
+// //   fileFormat: 'CSV'\
+// // \});\
+\
+//-------------------Yemen 2010---------------------------------------///\
+\
+//Filter LSIB to get Yemen outline\
+var yemen = LSIB.filterMetadata('cc', 'equals', 'YM')\
+//print(yemen);\
+var yemen_geom = yemen.geometry()\
+// print(yemen_geom, 'yemen_geom')\
+// Map.addLayer(yemen_geom, \{\}, 'yemen_geom');\
+\
+// Get scale (in meters)\
+var YEM_2010_VHR_scale = yemen_2010.projection().nominalScale();\
+// print('Yemen 2010 VHR scale: ', YEM_2010_VHR_scale); // ee.Number\
+// Map.addLayer(yemen_2010, \{\}, 'yemen_2010');\
+\
+//Filter worldPop to get Niger 2015 Unadjusted - can't do first operation here, not sure why it's not working\
+var YEM_2010_worldPop = worldPop.filterMetadata('country', 'equals', 'YEM')\
+                            .filterMetadata('year', 'equals', 2010)\
+                            .filterMetadata('UNadj', 'equals', 'no')\
+                            //.first();\
+// print(YEM_2010_worldPop);\
+// Map.addLayer(YEM_2010_worldPop, \{\}, 'YEM_2010_worldPop');\
+\
+//Make image, add to map\
+var YEM_2010_worldPop_img = ee.Image(YEM_2010_worldPop.first());\
+// print (YEM_2010_worldPop_img, 'YEM_2010_worldPop_img');\
+// Map.addLayer(YEM_2010_worldPop_img, \{\}, 'YEM_2010_worldPop_img');\
+\
+// Get scale (in meters)\
+var YEM_2010_worldPop_scale = YEM_2010_worldPop_img.projection().nominalScale();\
+//print('Yemen 2010 World Pop scale: ', YEM_2010_worldPop_scale); // ee.Number\
+\
+//reduceResolution\
+var YEM_2010_worldPop_img_reducer = YEM_2010_worldPop_img.reduceResolution(\{\
+      reducer: ee.Reducer.mean(),\
+      maxPixels: 200, //have also tried 12\
+      bestEffort: true\
+    \})\
+    .reproject(vhrProjection,null,YEM_2010_VHR_scale)\
+//Map.addLayer(YEM_2010_worldPop_img_reducer, \{\}, 'YEM_2010_worldPop_img_reducer');\
+    \
+// Get scale (in meters)\
+var YEM_2010_worldPop_img_reducer_scale = YEM_2010_worldPop_img_reducer.projection().nominalScale();\
+//print('Yemen 2010 reduceResolution scale: ', YEM_2010_worldPop_img_reducer_scale); // ee.Number\
+\
+//Create multi-band image of Niger 2010 and WorldPop\
+var YEM_2010_multi = yemen_2010.addBands(YEM_2010_worldPop_img_reducer);\
+//print (YEM_2010_multi, 'YEM_2010_multi');\
+\
+var YEM_2010_multi_rename = YEM_2010_multi.select(\
+    ['b1', 'population'], // old names\
+    ['VHR', 'WorldPop'] // new names\
+    );\
+//print(YEM_2010_multi_rename, 'YEM_2010_multi_rename');\
+\
+//Linear Regression\
+var YEM_2010_multi_rename_linearReg = YEM_2010_multi_rename//.select(['VHR', 'WorldPop'])\
+  .reduceRegion(\{\
+    reducer:ee.Reducer.linearRegression(\{numX:1, numY:1\}),\
+    maxPixels: 1e10\
+  \})\
+//print(YEM_2010_multi_rename_linearReg, 'YEM_2010_multi_rename_linearReg');\
+\
+// create variable which masks out values from the niger 2010 image but includes values greater than 0\
+var YEM_2010_vhr_input = yemen_2010.mask(YEM_2010_worldPop_img_reducer.gt(-1))\
+//Map.addLayer(YEM_2010_vhr_input, \{\}, 'YEM_2010_vhr_input');\
+\
+//Map over VHR values, new feature created with every value encountered, feature with value as a property returned \
+var YEM_2010_vhr_values = ee.Feature(null,YEM_2010_vhr_input.reduceRegion(ee.Reducer.toList(),yemen_geom,YEM_2010_VHR_scale))//.get('b1');\
+var YEM_2010_pop_values = ee.Feature(null,YEM_2010_worldPop_img_reducer.reduceRegion(ee.Reducer.toList(),yemen_geom,YEM_2010_VHR_scale))//.get('population');\
+\
+// print(YEM_2010_vhr_values, 'YEM_2010_vhr_values')\
+// print(YEM_2010_pop_values, 'YEM_2010_pop_values')\
+\
+// Create a feature collection which contains all the features that were created above for both the VHR and WorldPop\
+var YEM_2010_vhr_fc = ee.FeatureCollection(YEM_2010_vhr_values)//.merge(ee.FeatureCollection(pop_values))\
+//print(YEM_2010_vhr_fc)\
+var YEM_2010_pop_fc = ee.FeatureCollection(YEM_2010_pop_values)\
+//print(YEM_2010_pop_fc)\
+\
+// //Export the FeatureCollections to CSV\
+// Export.table.toDrive(\{\
+//   collection: YEM_2010_vhr_fc,\
+//   description:'YEM_2010_vhr_fc',\
+//   folder: '581_Project',\
+//   fileFormat: 'CSV'\
+// \});\
+\
+// Export.table.toDrive(\{\
+//   collection: YEM_2010_pop_fc,\
+//   description:'YEM_2010_pop_fc',\
+//   folder: '581_Project',\
+//   fileFormat: 'CSV'\
+// \});\
+\
+//-------------------Pakistan 2010---------------------------------------///\
+\
+//Filter LSIB to get Yemen outline\
+var pakistan = LSIB.filterMetadata('cc', 'equals', 'PK')\
+//print(pakistan);\
+var pakistan_geom = pakistan.geometry()\
+// print(pakistan_geom, 'pakistan_geom')\
+// Map.addLayer(pakistan_geom, \{\}, 'pakistan_geom');\
+\
+// Get scale (in meters)\
+var PAK_2010_VHR_scale = pakistan_2010.projection().nominalScale();\
+//print('Pakistan 2010 VHR scale: ', PAK_2010_VHR_scale); // ee.Number\
+\
+//Filter worldPop to get Niger 2015 Unadjusted - can't do first operation here, not sure why it's not working\
+var PAK_2010_worldPop = worldPop.filterMetadata('country', 'equals', 'PAK')\
+                            .filterMetadata('year', 'equals', 2010)\
+                            .filterMetadata('UNadj', 'equals', 'no')\
+                            //.first();\
+// print(PAK_2010_worldPop);\
+// Map.addLayer(PAK_2010_worldPop, \{\}, 'PAK_2010_worldPop');\
+\
+//Make image, add to map\
+var PAK_2010_worldPop_img = ee.Image(PAK_2010_worldPop.first());\
+// print (PAK_2010_worldPop_img, 'PAK_2010_worldPop_img');\
+// Map.addLayer(PAK_2010_worldPop_img, \{\}, 'PAK_2010_worldPop_img');\
+\
+// Get scale (in meters)\
+var PAK_2010_worldPop_scale = PAK_2010_worldPop_img.projection().nominalScale();\
+//print('Pakistan 2010 World Pop scale: ', PAK_2010_worldPop_scale); // ee.Number\
+\
+//reduceResolution\
+var PAK_2010_worldPop_img_reducer = PAK_2010_worldPop_img.reduceResolution(\{\
+      reducer: ee.Reducer.mean(),\
+      maxPixels: 200, //have also tried 12\
+      bestEffort: true\
+    \})\
+    .reproject(vhrProjection,null,PAK_2010_VHR_scale)\
+    \
+// Get scale (in meters)\
+var PAK_2010_worldPop_img_reducer_scale = PAK_2010_worldPop_img_reducer.projection().nominalScale();\
+//print('Pakistan 2010 reduceResolution scale: ', PAK_2010_worldPop_img_reducer_scale); // ee.Number\
+\
+//Create multi-band image of Pakistan 2010 and WorldPop\
+var PAK_2010_multi = pakistan_2010.addBands(PAK_2010_worldPop_img_reducer);\
+//print (PAK_2010_multi, 'PAK_2010_multi');\
+\
+var PAK_2010_multi_rename = PAK_2010_multi.select(\
+    ['b1', 'population'], // old names\
+    ['VHR', 'WorldPop'] // new names\
+    );\
+//print(PAK_2015_multi_rename, 'PAK_2015_multi_rename');\
+\
+//Linear Regression\
+var PAK_2010_multi_rename_linearReg = PAK_2010_multi_rename//.select(['VHR', 'WorldPop'])\
+  .reduceRegion(\{\
+    reducer:ee.Reducer.linearRegression(\{numX:1, numY:1\}),\
+    maxPixels: 1e10\
+  \})\
+//print(PAK_2010_multi_rename_linearReg, 'PAK_2010_multi_rename_linearReg');\
+\
+// create variable which masks out values from the niger 2010 image but includes values greater than 0\
+var PAK_2010_vhr_input = pakistan_2010.mask(PAK_2010_worldPop_img_reducer.gt(-1))\
+\
+//Map over VHR values, new feature created with every value encountered, feature with value as a property returned \
+var PAK_2010_vhr_values = ee.Feature(null,PAK_2010_vhr_input.reduceRegion(ee.Reducer.toList(),pakistan_geom,PAK_2010_VHR_scale))//.get('b1');\
+var PAK_2010_pop_values = ee.Feature(null,PAK_2010_worldPop_img_reducer.reduceRegion(ee.Reducer.toList(),pakistan_geom,PAK_2010_VHR_scale))//.get('population');\
+\
+// print(PAK_2010_vhr_values)\
+// print(PAK_2010_pop_values)\
+\
+// Create a feature collection which contains all the features that were created above for both the VHR and WorldPop\
+var PAK_2010_vhr_fc = ee.FeatureCollection(PAK_2010_vhr_values)//.merge(ee.FeatureCollection(pop_values))\
+//print(PAK_2010_vhr_fc)\
+var PAK_2010_pop_fc = ee.FeatureCollection(PAK_2010_pop_values)\
+//print(PAK_2010_pop_fc)\
+\
+// //Export the FeatureCollections to CSV\
+// Export.table.toDrive(\{\
+//   collection: PAK_2010_vhr_fc,\
+//   description:'PAK_2010_vhr_fc',\
+//   folder: '581_Project',\
+//   fileFormat: 'CSV'\
+// \});\
+\
+// Export.table.toDrive(\{\
+//   collection: PAK_2010_pop_fc,\
+//   description:'PAK_2010_pop_fc',\
+//   folder: '581_Project',\
+//   fileFormat: 'CSV'\
+// \});\
+\
+//---------------------Pakistan 2015--------------------------------------//\
+\
+// // Get scale (in meters)\
+var PAK_2015_VHR_scale = pakistan_2015.projection().nominalScale();\
+//print('Pakistan 2010 VHR scale: ', PAK_2010_VHR_scale); // ee.Number\
+\
+//Filter worldPop to get Niger 2015 Unadjusted - can't do first operation here, not sure why it's not working\
+var PAK_2015_worldPop = worldPop.filterMetadata('country', 'equals', 'PAK')\
+                            .filterMetadata('year', 'equals', 2015)\
+                            .filterMetadata('UNadj', 'equals', 'no')\
+                            //.first();\
+// print(PAK_2015_worldPop);\
+// Map.addLayer(PAK_2015_worldPop, \{\}, 'PAK_2015_worldPop');\
+\
+//Make image, add to map\
+var PAK_2015_worldPop_img = ee.Image(PAK_2015_worldPop.first());\
+// print (PAK_2015_worldPop_img, 'PAK_2015_worldPop_img');\
+// Map.addLayer(PAK_2015_worldPop_img, \{\}, 'PAK_2015_worldPop_img');\
+\
+// Get scale (in meters)\
+var PAK_2015_worldPop_scale = PAK_2015_worldPop_img.projection().nominalScale();\
+//print('Pakistan 2015 World Pop scale: ', PAK_2015_worldPop_scale); // ee.Number\
+\
+//reduceResolution\
+var PAK_2015_worldPop_img_reducer = PAK_2015_worldPop_img.reduceResolution(\{\
+      reducer: ee.Reducer.mean(),\
+      maxPixels: 200, //have also tried 12\
+      bestEffort: true\
+    \})\
+    .reproject(vhrProjection,null,PAK_2015_VHR_scale)\
+    \
+// Get scale (in meters)\
+var PAK_2015_worldPop_img_reducer_scale = PAK_2015_worldPop_img_reducer.projection().nominalScale();\
+//print('Pakistan 2015 reduceResolution scale: ', PAK_2015_worldPop_img_reducer_scale); // ee.Number\
+\
+//Create multi-band image of Niger 2010 and WorldPop\
+var PAK_2015_multi = pakistan_2015.addBands(PAK_2015_worldPop_img_reducer);\
+//print (PAK_2015_multi, 'PAK_2015_multi');\
+\
+var PAK_2015_multi_rename = PAK_2015_multi.select(\
+    ['b1', 'population'], // old names\
+    ['VHR', 'WorldPop'] // new names\
+    );\
+//print(PAK_2015_multi_rename, 'PAK_2015_multi_rename');\
+\
+//Linear Regression\
+var PAK_2015_multi_rename_linearReg = PAK_2015_multi_rename//.select(['VHR', 'WorldPop'])\
+  .reduceRegion(\{\
+    reducer:ee.Reducer.linearRegression(\{numX:1, numY:1\}),\
+    maxPixels: 1e10\
+  \})\
+//print(PAK_2015_multi_rename_linearReg, 'PAK_2015_multi_rename_linearReg');\
+\
+// create variable which masks out values from the niger 2010 image but includes values greater than 0\
+var PAK_2015_vhr_input = pakistan_2015.mask(PAK_2015_worldPop_img_reducer.gt(-1))\
+\
+//Map over VHR values, new feature created with every value encountered, feature with value as a property returned \
+var PAK_2015_vhr_values = ee.Feature(null,PAK_2015_vhr_input.reduceRegion(ee.Reducer.toList(),pakistan_geom,PAK_2015_VHR_scale))//.get('b1');\
+var PAK_2015_pop_values = ee.Feature(null,PAK_2015_worldPop_img_reducer.reduceRegion(ee.Reducer.toList(),pakistan_geom,PAK_2015_VHR_scale))//.get('population');\
+\
+// print(PAK_2015_vhr_values)\
+// print(PAK_2015_pop_values, 'PAK_2015_pop_values')\
+\
+// Create a feature collection which contains all the features that were created above for both the VHR and WorldPop\
+var PAK_2015_vhr_fc = ee.FeatureCollection(PAK_2015_vhr_values)//.merge(ee.FeatureCollection(pop_values))\
+//print(PAK_2015_vhr_fc)\
+var PAK_2015_pop_fc = ee.FeatureCollection(PAK_2015_pop_values)\
+//print(PAK_2015_pop_fc)\
+\
+// //Export the FeatureCollections to CSV\
+// Export.table.toDrive(\{\
+//   collection: PAK_2015_vhr_fc,\
+//   description:'PAK_2015_vhr_fc',\
+//   folder: '581_Project',\
+//   fileFormat: 'CSV'\
+// \});\
+\
+// Export.table.toDrive(\{\
+//   collection: PAK_2015_pop_fc,\
+//   description:'PAK_2015_pop_fc',\
+//   folder: '581_Project',\
+//   fileFormat: 'CSV'\
+// \});\
+\
+//-------------------Afghanistan 2010---------------------------------------///\
+\
+//Filter LSIB to get Afghanistan outline\
+var afghanistan = LSIB.filterMetadata('cc', 'equals', 'AF')\
+//print(afghanistan);\
+var afghanistan_geom = afghanistan.geometry()\
+// print(afghanistan_geom, 'afghanistan_geom')\
+// Map.addLayer(afghanistan_geom, \{\}, 'afghanistan_geom');\
+\
+// Get scale (in meters)\
+var AFG_2010_VHR_scale = afghanistan_2010.projection().nominalScale();\
+//print('Afghanistan 2010 VHR scale: ', AFG_2010_VHR_scale); // ee.Number\
+\
+//Filter worldPop to get Niger 2015 Unadjusted - can't do first operation here, not sure why it's not working\
+var AFG_2010_worldPop = worldPop.filterMetadata('country', 'equals', 'AFG')\
+                            .filterMetadata('year', 'equals', 2010)\
+                            .filterMetadata('UNadj', 'equals', 'no')\
+                            //.first();\
+// print(AFG_2010_worldPop);\
+// Map.addLayer(AFG_2010_worldPop, \{\}, 'AFG_2010_worldPop');\
+\
+//Make image, add to map\
+var AFG_2010_worldPop_img = ee.Image(AFG_2010_worldPop.first());\
+// print (AFG_2010_worldPop_img, 'AFG_2010_worldPop_img');\
+// Map.addLayer(AFG_2010_worldPop_img, \{\}, 'AFG_2010_worldPop_img');\
+\
+// Get scale (in meters)\
+var AFG_2010_worldPop_scale = AFG_2010_worldPop_img.projection().nominalScale();\
+//print('Afghanistan 2010 World Pop scale: ', AFG_2010_worldPop_scale); // ee.Number\
+\
+//reduceResolution\
+var AFG_2010_worldPop_img_reducer = AFG_2010_worldPop_img.reduceResolution(\{\
+      reducer: ee.Reducer.mean(),\
+      maxPixels: 200, //have also tried 12\
+      bestEffort: true\
+    \})\
+    .reproject(vhrProjection,null,AFG_2010_VHR_scale)\
+    \
+// Get scale (in meters)\
+var AFG_2010_worldPop_img_reducer_scale = AFG_2010_worldPop_img_reducer.projection().nominalScale();\
+//print('Afghanistan 2010 reduceResolution scale: ', AFG_2010_worldPop_img_reducer_scale); // ee.Number\
+\
+//Create multi-band image of Pakistan 2010 and WorldPop\
+var AFG_2010_multi = afghanistan_2010.addBands(AFG_2010_worldPop_img_reducer);\
+//print (AFG_2010_multi, 'AFG_2010_multi');\
+\
+var AFG_2010_multi_rename = AFG_2010_multi.select(\
+    ['b1', 'population'], // old names\
+    ['VHR', 'WorldPop'] // new names\
+    );\
+//print(PAK_2015_multi_rename, 'PAK_2015_multi_rename');\
+\
+//Linear Regression\
+var AFG_2010_multi_rename_linearReg = AFG_2010_multi_rename//.select(['VHR', 'WorldPop'])\
+  .reduceRegion(\{\
+    reducer:ee.Reducer.linearRegression(\{numX:1, numY:1\}),\
+    maxPixels: 1e10\
+  \})\
+//print(AFG_2010_multi_rename_linearReg, 'AFG_2010_multi_rename_linearReg');\
+\
+// create variable which masks out values from the niger 2010 image but includes values greater than 0\
+var AFG_2010_vhr_input = afghanistan_2010.mask(AFG_2010_worldPop_img_reducer.gt(-1))\
+\
+//Map over VHR values, new feature created with every value encountered, feature with value as a property returned \
+var AFG_2010_vhr_values = ee.Feature(null,AFG_2010_vhr_input.reduceRegion(ee.Reducer.toList(),afghanistan_geom,AFG_2010_VHR_scale))//.get('b1');\
+var AFG_2010_pop_values = ee.Feature(null,AFG_2010_worldPop_img_reducer.reduceRegion(ee.Reducer.toList(),afghanistan_geom,AFG_2010_VHR_scale))//.get('population');\
+\
+// print(AFG_2010_vhr_values)\
+// print(AFG_2010_pop_values)\
+\
+// Create a feature collection which contains all the features that were created above for both the VHR and WorldPop\
+var AFG_2010_vhr_fc = ee.FeatureCollection(AFG_2010_vhr_values)//.merge(ee.FeatureCollection(pop_values))\
+//print(AFG_2010_vhr_fc)\
+var AFG_2010_pop_fc = ee.FeatureCollection(AFG_2010_pop_values)\
+//print(AFG_2010_pop_fc)\
+\
+// //Export the FeatureCollections to CSV\
+// Export.table.toDrive(\{\
+//   collection: AFG_2010_vhr_fc,\
+//   description:'AFG_2010_vhr_fc',\
+//   folder: '581_Project',\
+//   fileFormat: 'CSV'\
+// \});\
+\
+// Export.table.toDrive(\{\
+//   collection: AFG_2010_pop_fc,\
+//   description:'AFG_2010_pop_fc',\
+//   folder: '581_Project',\
+//   fileFormat: 'CSV'\
+// \});\
+\
+//---------------------Afghanistan 2015--------------------------------------//\
+\
+// // Get scale (in meters)\
+var AFG_2015_VHR_scale = afghanistan_2015.projection().nominalScale();\
+//print('Afghanistan 2010 VHR scale: ', AFG_2010_VHR_scale); // ee.Number\
+\
+//Filter worldPop to get Niger 2015 Unadjusted - can't do first operation here, not sure why it's not working\
+var AFG_2015_worldPop = worldPop.filterMetadata('country', 'equals', 'AFG')\
+                            .filterMetadata('year', 'equals', 2015)\
+                            .filterMetadata('UNadj', 'equals', 'no')\
+                            //.first();\
+// print(AFG_2015_worldPop);\
+// Map.addLayer(AFG_2015_worldPop, \{\}, 'AFG_2015_worldPop');\
+\
+//Make image, add to map\
+var AFG_2015_worldPop_img = ee.Image(AFG_2015_worldPop.first());\
+// print (AFG_2015_worldPop_img, 'AFG_2015_worldPop_img');\
+// Map.addLayer(AFG_2015_worldPop_img, \{\}, 'AFG_2015_worldPop_img');\
+\
+// Get scale (in meters)\
+var AFG_2015_worldPop_scale = AFG_2015_worldPop_img.projection().nominalScale();\
+//print('Afghanistan 2015 World Pop scale: ', AFG_2015_worldPop_scale); // ee.Number\
+\
+//reduceResolution\
+var AFG_2015_worldPop_img_reducer = AFG_2015_worldPop_img.reduceResolution(\{\
+      reducer: ee.Reducer.mean(),\
+      maxPixels: 200, //have also tried 12\
+      bestEffort: true\
+    \})\
+    .reproject(vhrProjection,null,AFG_2015_VHR_scale)\
+    \
+// Get scale (in meters)\
+var AFG_2015_worldPop_img_reducer_scale = AFG_2015_worldPop_img_reducer.projection().nominalScale();\
+//print('Afghanistan 2015 reduceResolution scale: ', AFG_2015_worldPop_img_reducer_scale); // ee.Number\
+\
+//Create multi-band image of Niger 2010 and WorldPop\
+var AFG_2015_multi = afghanistan_2015.addBands(AFG_2015_worldPop_img_reducer);\
+//print (AFG_2015_multi, 'AFG_2015_multi');\
+\
+var AFG_2015_multi_rename = AFG_2015_multi.select(\
+    ['b1', 'population'], // old names\
+    ['VHR', 'WorldPop'] // new names\
+    );\
+//print(AFG_2015_multi_rename, 'AFG_2015_multi_rename');\
+\
+//Linear Regression\
+var AFG_2015_multi_rename_linearReg = AFG_2015_multi_rename//.select(['VHR', 'WorldPop'])\
+  .reduceRegion(\{\
+    reducer:ee.Reducer.linearRegression(\{numX:1, numY:1\}),\
+    maxPixels: 1e10\
+  \})\
+//print(AFG_2015_multi_rename_linearReg, 'AFG_2015_multi_rename_linearReg');\
+\
+// create variable which masks out values from the niger 2010 image but includes values greater than 0\
+var AFG_2015_vhr_input = afghanistan_2015.mask(AFG_2015_worldPop_img_reducer.gt(-1))\
+\
+//Map over VHR values, new feature created with every value encountered, feature with value as a property returned \
+var AFG_2015_vhr_values = ee.Feature(null,AFG_2015_vhr_input.reduceRegion(ee.Reducer.toList(),afghanistan_geom,AFG_2015_VHR_scale))//.get('b1');\
+var AFG_2015_pop_values = ee.Feature(null,AFG_2015_worldPop_img_reducer.reduceRegion(ee.Reducer.toList(),afghanistan_geom,AFG_2015_VHR_scale))//.get('population');\
+\
+// print(AFG_2015_vhr_values,  'AFG_2015_vhr_values')\
+// print(AFG_2015_pop_values, 'AFG_2015_pop_values')\
+\
+// Create a feature collection which contains all the features that were created above for both the VHR and WorldPop\
+var AFG_2015_vhr_fc = ee.FeatureCollection(AFG_2015_vhr_values)//.merge(ee.FeatureCollection(pop_values))\
+//print(AFG_2015_vhr_fc)\
+var AFG_2015_pop_fc = ee.FeatureCollection(AFG_2015_pop_values)\
+//print(AFG_2015_pop_fc)\
+\
+// // //Export the FeatureCollections to CSV\
+// // Export.table.toDrive(\{\
+// //   collection: AFG_2015_vhr_fc,\
+// //   description:'AFG_2015_vhr_fc',\
+// //   folder: '581_Project',\
+// //   fileFormat: 'CSV'\
+// // \});\
+\
+// // Export.table.toDrive(\{\
+// //   collection: AFG_2015_pop_fc,\
+// //   description:'AFG_2015_pop_fc',\
+// //   folder: '581_Project',\
+// //   fileFormat: 'CSV'\
+// // \});\
+}
